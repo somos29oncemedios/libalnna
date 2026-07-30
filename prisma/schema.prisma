@@ -1,75 +1,73 @@
-
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 model Tournament {
-  id        String   @id @default(uuid())
-  name      String
-  teams     Team[]
-  games     Game[]
-  createdAt DateTime @default(now())
+  id     String @id @default(cuid())
+  name   String
+  games  Game[]
 }
 
 model Team {
-  id           String       @id @default(uuid())
-  name         String
-  category     String       
-  tournamentId String
-  tournament   Tournament   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  roster       TeamPlayer[]
-  homeGames    Game[]       @relation("HomeTeam")
-  awayGames    Game[]       @relation("AwayTeam")
+  id          String       @id @default(cuid())
+  name        String
+  category    String
+  roster      TeamPlayer[]
+  homeGames   Game[]       @relation("HomeTeam")
+  awayGames   Game[]       @relation("AwayTeam")
 }
 
 model Player {
-  id      String       @id @default(uuid())
-  name    String
-  roster  TeamPlayer[]
-  stats   GameStat[]
+  id          String           @id @default(cuid())
+  name        String
+  teams       TeamPlayer[]
+  playerStats PlayerGameStat[]
 }
 
 model TeamPlayer {
-  id       String @id @default(uuid())
+  id       String @id @default(cuid())
   teamId   String
   team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   playerId String
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  number   Int    
+  number   Int
 }
 
 model Game {
-  id           String       @id @default(uuid())
+  id           String           @id @default(cuid())
   tournamentId String
-  tournament   Tournament   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournament   Tournament       @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   homeTeamId   String
-  homeTeam     Team         @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  homeTeam     Team             @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
   awayTeamId   String
-  awayTeam     Team         @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  homeScore    Int          @default(0)
-  awayScore    Int          @default(0)
-  status       String       @default("SCHEDULED") 
-  stage        String       @default("REGULAR")   
-  date         String?
-  time         String?
-  venue        String?
-  stats        GameStat[]
-  createdAt    DateTime     @default(now())
+  awayTeam     Team             @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  homeScore    Int              @default(0)
+  awayScore    Int              @default(0)
+  stage        String
+  date         String
+  time         String
+  venue        String
+  status       String
+  playerStats  PlayerGameStat[]
 }
 
-model GameStat {
-  id       String @id @default(uuid())
+model PlayerGameStat {
+  id       String @id @default(cuid())
   gameId   String
   game     Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  teamId   String
   playerId String
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  
   points   Int    @default(0)
+  rebounds Int    @default(0)
+  fouls    Int    @default(0)
+  steals   Int    @default(0)
+
+  @@unique([gameId, playerId])
 }
